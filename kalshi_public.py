@@ -1,7 +1,7 @@
 import requests
 import re
 
-PROD_BASE = "https://external-api.kalshi.com/trade-api/v2"
+PROD_BASE = "https://kalshi.com"
 
 
 class KalshiPublic:
@@ -29,10 +29,11 @@ class KalshiPublic:
             # Combined string for text matching
             text = f"{ticker} {title} {subtitle} {event_ticker}"
 
-            # Regex ensures 'sol' is treated as an isolated word or a specific ticker prefix,
-            # avoiding accidental matches on names like 'Axel Sola'.
-            has_sol = re.search(r'\bsol\b|^sol-', text) is not None
-            has_15m = any(x in text for x in ["15", "15-min", "15 min"])
+            # Regex targets 'sol' as a standalone word or specific asset prefix
+            has_sol = re.search(r'\bsol\b|^sol-|^kxsol', text) is not None
+            
+            # Explicitly checks for 15-minute frequency formats (including 15m ticker tails)
+            has_15m = any(x in text for x in ["15", "15-min", "15 min", "15m"])
 
             if has_sol and has_15m:
                 matches.append(m)
@@ -40,4 +41,3 @@ class KalshiPublic:
         # Prefer the market closing soonest.
         matches.sort(key=lambda x: x.get("close_time", "9999"))
         return matches
-
