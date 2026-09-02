@@ -57,7 +57,16 @@ def trading_loop():
 
             market = matches[0]
             ticker = market["ticker"]
-            price = float(market.get("yes_ask_dollars") or 0)
+            
+            # Kalshi returns price as a float string or 0. Parse safely.
+            raw_price = market.get("yes_ask_dollars")
+            price = float(raw_price) if raw_price is not None else 0.0
+
+            # LIQUIDITY SAFEGUARD: Skip market evaluation if order book is empty
+            if price <= 0.0:
+                state["error"] = f"Market {ticker} found, but there is currently zero liquidity (YES ask is $0.00)."
+                time.sleep(POLL_SECONDS)
+                continue
 
             previous = previous_prices.get(ticker)
             signal = strategy.evaluate(market, previous)
